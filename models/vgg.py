@@ -20,7 +20,7 @@ cfg = {
 
 class VGG(nn.Module):
 
-    def __init__(self, features, num_class=100):
+    def __init__(self, features, num_class=952):
         super().__init__()
         self.features = features
 
@@ -44,7 +44,7 @@ class VGG(nn.Module):
 def make_layers(cfg, batch_norm=False):
     layers = []
 
-    input_channel = 3
+    input_channel = 1
     for l in cfg:
         if l == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]

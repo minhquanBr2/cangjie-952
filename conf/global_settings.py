@@ -5,15 +5,15 @@ author baiyu
 import os
 from datetime import datetime
 
-#CIFAR100 dataset path (python version)
-#CIFAR100_PATH = '/nfs/private/cifar100/cifar-100-python'
+#CANGJIE952 dataset path (python version)
+CANGJIE952_TRAIN_PATH = '/home/minh-quan/pytorch-cifar100/data/etl_952_singlechar_size_64/952_train'
+CANGJIE952_VAL_PATH = '/home/minh-quan/pytorch-cifar100/data/etl_952_singlechar_size_64/952_val'
 
-#mean and std of cifar100 dataset
-CIFAR100_TRAIN_MEAN = (0.5070751592371323, 0.48654887331495095, 0.4409178433670343)
-CIFAR100_TRAIN_STD = (0.2673342858792401, 0.2564384629170883, 0.27615047132568404)
-
-#CIFAR100_TEST_MEAN = (0.5088964127604166, 0.48739301317401956, 0.44194221124387256)
-#CIFAR100_TEST_STD = (0.2682515741720801, 0.2573637364478126, 0.2770957707973042)
+# mean and std of cangjie dataset
+CANGJIE952_TRAIN_MEAN = 0.20013970136642456
+CANGJIE952_TRAIN_STD = 0.38466379046440125
+CANGJIE952_VAL_MEAN = 0.20011715590953827
+CANGJIE952_VAL_STD = 0.3841699957847595
 
 #directory to save weights file
 CHECKPOINT_PATH = 'checkpoint'
