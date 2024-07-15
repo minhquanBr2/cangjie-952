@@ -1,14 +1,6 @@
-# Pytorch-cifar100
+# Cangjie-952
 
-practice on cifar100 using pytorch
-
-## Requirements
-
-This is my experiment eviroument
-- python3.6
-- pytorch1.6.0+cu101
-- tensorboard 2.2.2(optional)
-
+Classify label of Chinese character images, and predict the Cangjie encoding for each image.
 
 ## Usage
 
@@ -18,11 +10,9 @@ $ cd pytorch-cifar100
 ```
 
 ### 2. dataset
-I will use cifar100 dataset from torchvision since it's more convenient, but I also
-kept the sample code for writing your own dataset module in dataset folder, as an
-example for people don't know how to write it.
+Use Pytorch's Dataset module to define the dataset's behavior, along with DataLoader to manage samples during training.
 
-### 3. run tensorbard(optional)
+### 3. run tensorbard for tracking experiments (optional)
 Install tensorboard
 ```bash
 $ pip install tensorboard
@@ -35,8 +25,8 @@ $ tensorboard --logdir='runs' --port=6006 --host='localhost'
 You need to specify the net you want to train using arg -net
 
 ```bash
-# use gpu to train inceptionv4
-$ python3 train.py -net inceptionv4 -gpu
+# use gpu to train vgg16 with batch size 512
+$ python3 train.py -net vgg16 -gpu -b 512
 ```
 
 sometimes, you might want to use warmup training by set ```-warm``` to 1 or 2, to prevent network

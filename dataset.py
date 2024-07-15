@@ -85,7 +85,7 @@ class CANGJIE952Train(Dataset):
         labels = sorted(os.listdir(self.root_dir), key=lambda x: int(x))
         for label in labels:
             if int(label) % 100 == 0:
-                print(f"Test dataset: processing class {label}.")
+                print(f"Train dataset: processing class {label}.")
             class_dir = os.path.join(self.root_dir, label)
             label_image_names = sorted(os.listdir(class_dir))
             label_image_paths = [os.path.join(class_dir, image_name) for image_name in label_image_names]

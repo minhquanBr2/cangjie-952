@@ -15,7 +15,9 @@ cfg = {
     'A' : [64,     'M', 128,      'M', 256, 256,           'M', 512, 512,           'M', 512, 512,           'M'],
     'B' : [64, 64, 'M', 128, 128, 'M', 256, 256,           'M', 512, 512,           'M', 512, 512,           'M'],
     'D' : [64, 64, 'M', 128, 128, 'M', 256, 256, 256,      'M', 512, 512, 512,      'M', 512, 512, 512,      'M'],
-    'E' : [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M']
+    'E' : [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+    'D2': [64, 64, 'M', 128, 128, 'M', 256, 256, 256,      'M', 512, 512, 512,      'M', 512, 512, 512,      'M', 512, 512, 512,      'M'],
+
 }
 
 class VGG(nn.Module):
@@ -25,13 +27,16 @@ class VGG(nn.Module):
         self.features = features
 
         self.classifier = nn.Sequential(
-            nn.Linear(512, 4096),
+            nn.Linear(512, 2048),
             nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
+            nn.Dropout(p=0.3),
+            nn.Linear(2048, 4096),
             nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(4096, num_class)
+            nn.Dropout(p=0.3),
+            nn.Linear(4096, 2048),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.3),
+            nn.Linear(2048, num_class)
         )
 
     def forward(self, x):
@@ -50,7 +55,7 @@ def make_layers(cfg, batch_norm=False):
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             continue
 
-        layers += [nn.Conv2d(input_channel, l, kernel_size=3, padding=1)]
+        layers += [nn.Conv2d(input_channel, l, kernel_size=3, padding=2, dilation=2)]
 
         if batch_norm:
             layers += [nn.BatchNorm2d(l)]
@@ -72,4 +77,8 @@ def vgg16_bn():
 def vgg19_bn():
     return VGG(make_layers(cfg['E'], batch_norm=True))
 
+if __name__ == "__main__":
+    net = vgg16_bn()
+    for name, param in net.named_parameters():
+        print(name, param.size())
 
