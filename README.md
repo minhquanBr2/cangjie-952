@@ -6,7 +6,7 @@ Classify label of Chinese character images, and predict the Cangjie encoding for
 
 ### 1. enter directory
 ```bash
-$ cd pytorch-cifar100
+$ cd cangjie-952
 ```
 
 ### 2. dataset
