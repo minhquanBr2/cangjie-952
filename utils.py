@@ -7,15 +7,16 @@ import sys
 import re
 import datetime
 
-import numpy
+import numpy as np
 
 import torch
 from torch.optim.lr_scheduler import _LRScheduler
 import torchvision
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
-from dataset import CANGJIE952Train, CANGJIE952Test, CIFAR100Test, CIFAR100Train
+from dataset import CANGJIE952, CIFAR100Test, CIFAR100Train
 from conf import settings
+import editdistance
 
 
 def get_network(args):
@@ -186,7 +187,7 @@ def get_training_dataloader(mean, std, batch_size=16, num_workers=2, shuffle=Tru
         transforms.Normalize(mean, std)
     ])
     
-    cangjie952_training = CANGJIE952Train(settings.CANGJIE952_TRAIN_PATH, transform=transform_train)
+    cangjie952_training = CANGJIE952('train', settings.CANGJIE952_TRAIN_PATH, settings.CANGJIE952_LABEL_PATH, transform=transform_train)
     cangjie952_training_loader = DataLoader(
         cangjie952_training, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size)
 
@@ -209,7 +210,7 @@ def get_test_dataloader(mean, std, batch_size=16, num_workers=2, shuffle=True):
         transforms.Normalize(mean, std)
     ])
 
-    cangjie952_test = CANGJIE952Test(settings.CANGJIE952_VAL_PATH, transform=transform_test)
+    cangjie952_test = CANGJIE952('test', settings.CANGJIE952_VAL_PATH, settings.CANGJIE952_LABEL_PATH, transform=transform_test)
     cangjie952_test_loader = DataLoader(
         cangjie952_test, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size)
 
@@ -306,21 +307,72 @@ def best_acc_weights(weights_folder):
     best_files = sorted(best_files, key=lambda w: int(re.search(regex_str, w).groups()[1]))
     return best_files[-1]
 
+def one_hot_encoding_to_cangjie_encoding(one_hot_encoding: torch.Tensor, type: str) -> list[str]:
+    cangjie_encoding = []
+    THRESHOLD = 0.8
+    AMPLIFY = 1000
+
+    if type == 'ground_truth':        
+        for one_hot in one_hot_encoding:
+            if one_hot.sum().item() == 0.0:
+                cangjie_encoding.append('zc')
+            else:
+                cangjie_str = ''
+                for i in range(5):
+                    chunk = one_hot[i * 26: (i + 1) * 26]
+                    if chunk.sum().item() == 0.0:
+                        break
+                    latin_char = chr(chunk.argmax().item() + ord('a'))
+                    cangjie_str += latin_char
+                cangjie_encoding.append(cangjie_str)
+    else:
+        for one_hot in one_hot_encoding:
+            cangjie_str = ''
+            for i in range(5):
+                chunk = one_hot[i * 26: (i + 1) * 26] * AMPLIFY
+                # convert chunk to softmax, and select the max, but only convert it to latin char when the softmax value is above THRESHOLD
+                chunk = torch.nn.functional.softmax(chunk, dim=0)
+                if chunk.max().item() < THRESHOLD:
+                    break
+                latin_char = chr(chunk.argmax().item() + ord('a'))
+                cangjie_str += latin_char
+            cangjie_encoding.append(cangjie_str)
+
+    return cangjie_encoding
+
+
+def get_prediction_error(preds, ground_truths):
+    total_length = 0
+    total_distance = 0
+    
+    for id in range(len(ground_truths)):
+        pred = preds[id]
+        ground_truth = ground_truths[id]
+        if ground_truth == 'zc':
+            total_length += 1
+            total_distance += 0 if pred.startswith('zc') else 1
+        else:
+            total_length += len(ground_truth)
+            total_distance += editdistance.eval(pred, ground_truth)
+
+    return total_distance, total_length
+
+
 
 if __name__ == "__main__":
 
-    print("CIFAR100_train...")
-    cifar100_train = torchvision.datasets.CIFAR100(root='./data', train=True, download=True)
-    print(cifar100_train.data.shape)
-    print(type(cifar100_train.data))
-    print(type(cifar100_train.data[0]))
-    print(cifar100_train[0])
+    # print("CIFAR100_train...")
+    # cifar100_train = torchvision.datasets.CIFAR100(root='./data', train=True, download=True)
+    # print(cifar100_train.data.shape)
+    # print(type(cifar100_train.data))
+    # print(type(cifar100_train.data[0]))
+    # print(cifar100_train[0])
     
-    cangjie952_train = CANGJIE952Train(settings.CANGJIE952_TRAIN_PATH)
+    cangjie952_train = CANGJIE952('train', settings.CANGJIE952_TRAIN_PATH, settings.CANGJIE952_LABEL_PATH)
     train_mean, train_std = compute_mean_std(cangjie952_train)
     print(f"Train mean: {train_mean}, train std: {train_std}.")
 
-    cangjie952_test = CANGJIE952Test(settings.CANGJIE952_VAL_PATH)
+    cangjie952_test = CANGJIE952('test', settings.CANGJIE952_VAL_PATH, settings.CANGJIE952_LABEL_PATH)
     test_mean, test_std = compute_mean_std(cangjie952_test)
     print(f"Test mean: {test_mean}, test std: {test_std}.")
 
