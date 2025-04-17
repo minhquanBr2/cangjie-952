@@ -24,7 +24,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR, \
-    most_recent_folder, most_recent_weights, last_epoch, best_acc_weights
+    most_recent_folder, most_recent_weights, last_epoch, best_acc_weights, \
+    one_hot_encoding_to_cangjie_encoding, get_prediction_error
 
 def train(epoch):
 
@@ -80,8 +81,8 @@ def eval_training(epoch=0, tb=True):
     start = time.time()
     net.eval()
 
-    test_loss = 0.0 # cost function error
-    correct = 0.0
+    test_loss = 0.0         # loss function 
+    total_distance, total_length = 0, 0
 
     for (images, labels) in cangjie952_test_loader:
 
@@ -90,21 +91,28 @@ def eval_training(epoch=0, tb=True):
             labels = labels.cuda()
 
         outputs = net(images)
+        preds = one_hot_encoding_to_cangjie_encoding(outputs, 'pred')
+        ground_truths = one_hot_encoding_to_cangjie_encoding(labels, 'ground_truth')
+        # print(loss)
+        # print(outputs)
+        # print(labels)
+        
+        batch_distance, batch_length = get_prediction_error(preds, ground_truths)
         loss = loss_function(outputs, labels)
-
         test_loss += loss.item()
-        _, preds = outputs.max(1)
-        correct += preds.eq(labels).sum()
+        total_distance += batch_distance
+        total_length += batch_length
+        accuracy = 1 - total_distance / total_length
 
     finish = time.time()
     if args.gpu:
         print('GPU INFO.....')
         print(torch.cuda.memory_summary(), end='')
     print('Evaluating Network.....')
-    print('Test set: Epoch: {}, Average loss: {:.4f}, Accuracy: {:.4f}, Time consumed:{:.2f}s'.format(
+    print('Test set: Epoch: {}, Average loss: {:.8f}, Accuracy: {:.4f}, Time consumed:{:.2f}s'.format(
         epoch,
         test_loss / len(cangjie952_test_loader.dataset),
-        correct.float() / len(cangjie952_test_loader.dataset),
+        accuracy,
         finish - start
     ))
     print()
@@ -112,9 +120,9 @@ def eval_training(epoch=0, tb=True):
     #add informations to tensorboard
     if tb:
         writer.add_scalar('Test/Average loss', test_loss / len(cangjie952_test_loader.dataset), epoch)
-        writer.add_scalar('Test/Accuracy', correct.float() / len(cangjie952_test_loader.dataset), epoch)
+        writer.add_scalar('Test/Accuracy', accuracy, epoch)
 
-    return correct.float() / len(cangjie952_test_loader.dataset)
+    return accuracy
 
 if __name__ == '__main__':
 
@@ -146,7 +154,7 @@ if __name__ == '__main__':
         shuffle=True
     )
 
-    loss_function = nn.CrossEntropyLoss()
+    loss_function = nn.MSELoss()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
     train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=settings.MILESTONES, gamma=0.2) #learning rate decay
     iter_per_epoch = len(cangjie952_training_loader)

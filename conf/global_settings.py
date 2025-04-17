@@ -8,6 +8,8 @@ from datetime import datetime
 #CANGJIE952 dataset path (python version)
 CANGJIE952_TRAIN_PATH = '/home/minh-quan/pytorch-cifar100/data/etl_952_singlechar_size_64/952_train'
 CANGJIE952_VAL_PATH = '/home/minh-quan/pytorch-cifar100/data/etl_952_singlechar_size_64/952_val'
+CANGJIE952_LABEL_PATH = '/home/minh-quan/pytorch-cifar100/data/etl_952_singlechar_size_64/952_labels.txt'
+
 
 # mean and std of cangjie dataset
 CANGJIE952_TRAIN_MEAN = 0.20013970136642456
